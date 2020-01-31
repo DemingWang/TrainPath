@@ -17,6 +17,7 @@ def parse_train_no_json(train_no_json):
     :return: 火车车次列表
     """
     train_no_list = []
+    # print((train_no_json))
     json_text = json.loads(train_no_json)
     data = json_text['data']
     result = data['result']
@@ -24,6 +25,7 @@ def parse_train_no_json(train_no_json):
         list_temp = r.split("|")
         if list_temp.__contains__("预订"):
             train_no = list_temp[list_temp.index("预订") + 1]
+            print('train_no：',train_no)
             train_no_list.append(train_no)
     return train_no_list
 

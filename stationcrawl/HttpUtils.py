@@ -13,6 +13,7 @@ import random
 from retrying import retry
 from stationcrawl import LogUtils
 from stationcrawl.Constants import *
+from stationcrawl.ArgList import get_key
 
 
 @retry(wait_fixed=3000, stop_max_attempt_number=9)
@@ -37,16 +38,37 @@ def get_html(url):
 
 
 @retry(wait_fixed=3000, stop_max_attempt_number=9)
-def get_bytes(url):
+def get_bytes(url,arg):
     """
     获取File字节流
 
     :param url: File地址
     :return: response.content
     """
-
+    init_url = 'https://kyfw.12306.cn/otn/leftTicket/init'
+    from_station_name = get_key(STATION_DICT, arg[1])
+    to_station_name = get_key(STATION_DICT, arg[2])
+    post_data= {'back_train_date':str(arg[0]),
+                '_json_att':"",'flag':'dc',
+                'leftTicketDTO.from_station':str(arg[1]),
+                'leftTicketDTO.to_station':str(arg[2]),
+                # 'leftTicketDTO.from_station_name':str(arg[1]),
+                # 'leftTicketDTO.to_station_name':str(arg[2]),
+                'leftTicketDTO.train_date':str(arg[0]),
+                'pre_step_flag':'index',
+                'purpose_code':'ADULT'}
+ 
+    init_resp=requests.post(init_url,data=post_data,allow_redirects=True,verify=False)
+    cookies=init_resp.cookies
+    # cookies.set('_jc_save_fromStation', str(arg[1]) +','+str(arg[1]), domain='kyfw.12306.cn', path='/')
+    # cookies.set('_jc_save_toStation', str(arg[2])+','+str(arg[2]), domain='kyfw.12306.cn', path='/')
+    cookies.set('_jc_save_fromStation', str(arg[1]), domain='kyfw.12306.cn', path='/')
+    cookies.set('_jc_save_toStation', str(arg[2]), domain='kyfw.12306.cn', path='/')
+    cookies.set('_jc_save_fromDate', str(arg[0]), domain='kyfw.12306.cn', path='/')
+    cookies.set('_jc_save_toDate', str(arg[0]), domain='kyfw.12306.cn', path='/')
+    cookies.set('_jc_save_wfdc_flag', 'dc', domain='kyfw.12306.cn', path='/')
     try:
-        response = requests.get(url, headers=__gen_headers())
+        response = requests.get(url,cookies=cookies,headers=__gen_headers(),verify=False)#, headers=__gen_headers()
         if response.status_code == 200:
             return response.content.decode('utf-8')
         else:
